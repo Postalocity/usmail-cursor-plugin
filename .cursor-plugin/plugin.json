@@ -1,0 +1,30 @@
+{
+  "name": "usmail",
+  "displayName": "USMail.ai",
+  "description": "USMail.ai MCP \u2014 AI print-to-mail. Upload, generate proof, human approves, we produce. Lab and production connectors.",
+  "version": "0.1.0",
+  "author": {
+    "name": "USMail.ai",
+    "url": "https://www.usmail.ai"
+  },
+  "homepage": "https://www.usmail.ai/docs/mcp",
+  "repository": "https://github.com/broadstrokeinc/usmail-cursor-plugin",
+  "license": "MIT",
+  "keywords": [
+    "usmail",
+    "print-to-mail",
+    "mcp",
+    "usps",
+    "mail"
+  ],
+  "logo": "assets/logo.svg",
+  "category": "integrations",
+  "tags": [
+    "mcp",
+    "mail",
+    "usps",
+    "print"
+  ],
+  "mcpServers": "./mcp.json",
+  "skills": "./skills/"
+}

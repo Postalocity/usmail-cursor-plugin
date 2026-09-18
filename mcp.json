@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "usmail": {
+      "type": "http",
+      "url": "https://app.usmail.ai/mcp"
+    },
+    "usmail-lab": {
+      "type": "http",
+      "url": "https://dev.usmail.ai/mcp"
+    }
+  }
+}
