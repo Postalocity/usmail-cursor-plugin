@@ -1,6 +1,6 @@
-# USMail.ai Cursor plugin
+# USMail.ai Cursor / Grok Bot plugin
 
-Marketplace-style connector pack so Grok Bot / Cursor show the **USMail.ai** mark on the Added card (bundled `assets/logo.svg`), matching Atlassian/GitHub/Outlook — not letter-avatar fallback from raw `AddMcpServer` URLs.
+Marketplace-style pack so the Added card shows the USMail mark (bundled `assets/logo.svg`) instead of the gray letter avatar from raw `AddMcpServer` URLs.
 
 ## Connectors
 
@@ -9,14 +9,20 @@ Marketplace-style connector pack so Grok Bot / Cursor show the **USMail.ai** mar
 | `usmail` | https://app.usmail.ai/mcp |
 | `usmail-lab` | https://dev.usmail.ai/mcp |
 
-Brand: USMail.ai only. Slogan: You upload. You approve. We produce.
+## Install (team — fastest)
 
-## Install
+1. Cursor Dashboard → **Plugins** → Team Marketplaces → **Add Marketplace** → **Import from Repo**
+2. Repo: `https://github.com/broadstrokeinc/usmail-cursor-plugin`
+3. Add plugin to marketplace → install **USMail.ai**
+4. Remove old URL-only `usmail` / `usmail-lab` connectors if present
+5. Auth each connector (OAuth)
 
-1. Publish this repo to the Cursor marketplace (or team plugin catalog).
-2. Install **USMail.ai** from SearchPlugins / marketplace.
-3. Auth each connector (OAuth). Remove old custom URL adds (`usmail` / `usmail-lab` without `plugin=`) to avoid duplicates.
+## Install (public marketplace)
 
-## Why
+Submit at https://cursor.com/marketplace/publish — manual Cursor review.
 
-Custom HTTP MCP Added cards ignore live `logo_uri`. Marketplace plugins use `plugin.json` → `logo`.
+## Skills
+
+- `usmail-mcp` — grant off happy path; chips one-by-one; proof ≠ Approve; human Pay & Approve
+
+Lab skills SSOT: https://dev.usmail.ai/skills.md
