@@ -11,8 +11,8 @@ Marketplace-style pack so the Added card shows the USMail mark (bundled `assets/
 
 ## Install (team — fastest)
 
-1. Cursor Dashboard → **Plugins** → Team Marketplaces → **Add Marketplace** → **Import from Repo**
-2. Repo: `https://github.com/broadstrokeinc/usmail-cursor-plugin`
+1. Cursor Dashboard → **Plugins & MCPs** → Team Marketplaces → **Add Marketplace** → **Import from Repo**
+2. Repo: `https://github.com/Postalocity/usmail-cursor-plugin`
 3. Add plugin to marketplace → install **USMail.ai**
 4. Remove old URL-only `usmail` / `usmail-lab` connectors if present
 5. Auth each connector (OAuth)
