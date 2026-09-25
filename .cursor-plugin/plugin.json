@@ -1,8 +1,8 @@
 {
   "name": "usmail",
   "displayName": "USMail.ai",
-  "description": "USMail.ai MCP \u2014 AI print-to-mail. Upload, generate proof, human approves, we produce. Lab and production connectors.",
-  "version": "0.1.0",
+  "description": "USMail.ai — AI print-to-mail. You upload. You approve. We produce. Production MCP only (https://app.usmail.ai/mcp). Agents prepare; humans fund the meter and approve. Not USPS.",
+  "version": "0.2.0",
   "author": {
     "name": "USMail.ai",
     "url": "https://www.usmail.ai"
@@ -14,7 +14,7 @@
     "usmail",
     "print-to-mail",
     "mcp",
-    "usps",
+    "direct-mail",
     "mail"
   ],
   "logo": "assets/logo.svg",
@@ -22,7 +22,7 @@
   "tags": [
     "mcp",
     "mail",
-    "usps",
+    "print-to-mail",
     "print"
   ],
   "mcpServers": "./mcp.json",
