@@ -4,8 +4,9 @@ description: >-
   Prepare USMail.ai print-to-mail on https://app.usmail.ai/mcp. Use when the
   user wants letters or postcards printed and mailed: upload a PDF, set
   recipients, choose print options, generate a proof, and share the job link.
-  The agent prepares only. A human registers, funds the meter, and approves
-  production on the app. Do not use for EDDM, card deposits, or invented
+  The agent prepares only. A human registers and funds the meter. The human
+  approves on the app, or explicitly grants capped postage and then sends
+  Looks good after the proof. Do not use for EDDM, card deposits, or invented
   tools or hostnames.
 ---
 
@@ -15,9 +16,8 @@ Slogan: **You upload. You approve. We produce.**
 
 Live MCP: OAuth on `https://app.usmail.ai/mcp`.
 
-Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md. Match the file’s **Version:** (shipped as **ea2e4f3a**) to `serverInfo.version` from the MCP initialize handshake. That same `serverInfo.version` is on the unauthenticated error payload. If the two versions differ, re-read https://www.usmail.ai/skills.md and follow the file. Do not add a connector. Cite the skills version you read on status cards. `get_account_status` returns only `success`, `account`, `org`, `meter`, and `message`. It is not the skills version.
+Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md. Match the file’s **Version:** (shipped as **ea2e4f3a**) to `serverInfo.version` from the MCP initialize handshake. That same `serverInfo.version` is on the unauthenticated error payload. If the two versions differ, re-read https://www.usmail.ai/skills.md and follow the file. This plugin is production-only; ignore those parts, use https://app.usmail.ai, the usmail server, and serverInfo.version. Do not add a connector. Cite the skills version you read on status cards. `get_account_status` returns only `success`, `account`, `org`, `meter`, and `message`. It is not the skills version.
 
-Rules: https://www.usmail.ai/AGENTS.md
 Docs: https://www.usmail.ai/docs/mcp
 Cite: https://www.usmail.ai/llms.txt
 
@@ -27,7 +27,7 @@ This plugin has one server, `usmail`, at `https://app.usmail.ai/mcp`. Auth is OA
 
 If the server needs auth, the first beat of the turn is a normal tool call (`get_account_status`) so the host raises **Connect / Authorize** on the existing `usmail` server. Do not wait for the human to ask. Do not skip the card.
 
-**Never `AuthenticateMcpServer`.** That surfaces **Added**, not Authorize. **Added is not Authorize.** Tell them to Connect on the existing server. Do not add a second server. Do not sign out. A skills bump means re-read https://www.usmail.ai/skills.md.
+**Never `AuthenticateMcpServer`.** That name is a Cursor host action, not a USMail tool. It surfaces **Added**, not Authorize. **Added is not Authorize.** Tell them to Connect on the existing server. Do not add a second server. Do not sign out. A skills bump means re-read https://www.usmail.ai/skills.md.
 
 Host **Auto-review** means the host allowed a tool. It is not mill approval. It is not the postage grant.
 
@@ -35,7 +35,7 @@ Host **Auto-review** means the host allowed a tool. It is not mill approval. It 
 
 You prepare the job. You do not:
 
-- Approve production mail. A human approves on the app.
+- Approve production mail on your own. The human approves on the app, or explicitly grants capped postage and then sends Looks good after the proof.
 - Fund the meter or run card deposits. A human registers and funds the prepaid meter.
 - Do EDDM.
 - Invent hostnames, add-commands, or tool names. Do not invent mill tool names. The job link is only `https://app.usmail.ai/?job={id}`, with `{id}` the job id the tools return.
@@ -44,15 +44,16 @@ Public tools, and no others: `get_account_status`, `list_mail_products`, `create
 
 ## Sequence
 
-1. **Attach the PDF.** Small files: `fileBase64` is the PDF bytes from the chat attachment (never `@/path`). Large files: `get_document_upload_params` `{ jobId, fileName }`, POST the chat-attachment binary to S3 (`file=@<that.pdf>`), then `upload_document` `{ jobId, uploadedFileName }` with no `fileBase64`. Do not copy the file aside. Do not invent a base64 helper. If you cannot POST to S3, the human drops the PDF on **Open job**. Do not `generate_proof` on a stub.
-2. **`detect_zone` `{ pdfBase64 }`.** It returns `mailingType` and `paperSize`. Do not title this Pick an address.
-3. **Recipients, every product.** Ask whether to find the address on the document or upload a CSV. Wait. Document: use live `sampleText`, then **Pick an address**, and hold the zone. CSV or typed rows: `add_recipients`, not `upload_document`. Finding candidates is not choosing the path.
-4. **`create_mail_job` `{ mailingType, paperSize }`.** Document path: `upload_document`, then the zone. CSV path: `add_recipients` first, then `upload_document` for the artwork. Do not upload the PDF before the recipient digest on a list job.
-5. **Spend grant, asked early, default off.** Before chips, if the grant is off, ask **Postage grant?** Capped dollars, uncapped, or Pay & Approve on the app. Wait. Do not turn a grant on unless they choose it. Read it with `get_agent_spend_grant`. Set it with `set_agent_spend_grant` only after they say so.
-6. **Chips, one field at a time.** Ask `setup.next.prompt`. Wait. `configure_mail_job` for that field only. Letters: class, then color, then quality, then duplex, then inserts. Postcards: paper stock, then First-Class or Priority. Mill defaults are not consent.
-7. Apply recipients from step 3 with `configure_zone` `{ jobId, filename: uploadedFiles[0], zone }` or `add_recipients`. Then `generate_proof`. That is not Approve.
-8. **Building.** After `generate_proof`, the human card is only **Building your proof** (you will send the proof when it is ready). No **Open job** while it is building. You coarse-poll `get_mail_job`. Stay silent until the proof is ready or the job is hung. When it is ready, send the Proof ready card. Never reuse a stored `proofUrl`. Job Start at 0% and 0 pieces after two polls means hung; an **Open job** link is OK then.
-9. **Proof, then address quality.** Paste the Proof ready card, including address-quality counts. They can Still mail, Ignore, or Fix on the app. Do not auto-fix addresses. After they send **Looks good**, continue as below.
+1. **Hold the PDF.** `fileBase64` is the PDF bytes from the chat attachment (never `@/path`). Do not upload it yet.
+2. **`detect_zone` `{ pdfBase64 }`.** This can run before a job exists. It returns `mailingType` and `paperSize`. Do not title this Pick an address.
+3. **Recipients, every product.** Ask whether to find the address on the document or upload a CSV. Wait. Document: use live `sampleText`, then **Pick an address**, and hold the zone. CSV or typed rows: hold the rows. Do not call `add_recipients` yet. Finding candidates is not choosing the path.
+4. **`create_mail_job` `{ mailingType, paperSize }`.** This is the first call that returns a `jobId`. No earlier step takes a `jobId`.
+5. **Attach to that job.** `get_document_upload_params` and `upload_document` need the `jobId` from step 4. Small files: `upload_document` with `fileBase64`. Large files: `get_document_upload_params` `{ jobId, fileName }`, POST the chat-attachment binary to S3 (`file=@<that.pdf>`), then `upload_document` `{ jobId, uploadedFileName }` with no `fileBase64`. Do not copy the file aside. Do not invent a base64 helper. If you cannot POST to S3, the human drops the PDF on **Open job**. Do not `generate_proof` on a stub. Document path: upload, then `configure_zone` `{ jobId, filename: uploadedFiles[0], zone }`. CSV path: `add_recipients` first, then `upload_document` for the artwork. Do not upload the PDF before the recipient digest on a list job.
+6. **Spend grant, asked early, default off.** Before chips, if the grant is off, ask **Postage grant?** Capped dollars, uncapped, or Pay & Approve on the app. Wait. Turn a grant on only when the human explicitly asks, at the cap they choose. Read it with `get_agent_spend_grant`. Set it with `set_agent_spend_grant` only after they say so.
+7. **Chips, one field at a time.** Ask `setup.next.prompt`. Wait. `configure_mail_job` for that field only. Letters: class, then color, then quality, then duplex, then inserts. Postcards: paper stock, then First-Class or Priority. Mill defaults are not consent.
+8. **`generate_proof`.** The PDF and recipients are already on the job from step 5. That is not Approve.
+9. **Building.** After `generate_proof`, the human card is only **Building your proof** (you will send the proof when it is ready). No **Open job** while it is building. You coarse-poll `get_mail_job`. Stay silent until the proof is ready or the job is hung. When it is ready, send the Proof ready card. Never reuse a stored `proofUrl`. Job Start at 0% and 0 pieces after two polls means hung; an **Open job** link is OK then.
+10. **Proof, then address quality.** Paste the Proof ready card, including address-quality counts. They can Still mail, Ignore, or Fix on the app. Do not auto-fix addresses. After they send **Looks good**, continue as below.
 
 ## Proof gate
 
@@ -121,7 +122,7 @@ Approved or queued: do not change chips, the zone, or the PDF. Tell them they mu
 - Hiding `mill_error` or the mill `message`
 - A grant they did not ask for; mill defaults treated as chip answers; chips batched
 - A stub proof, or a queued card that only shows postage
-- `AuthenticateMcpServer`, a forced re-auth, or a new server for needsAuth or a skills bump
+- `AuthenticateMcpServer` (a Cursor host action, not a USMail tool), a forced re-auth, or a new server for needsAuth or a skills bump
 - Recipients before the PDF on the document path; artwork before `add_recipients` on the CSV path; a substitute PDF; `@/path` as `fileBase64`; a CSV via `upload_document`; `configure_zone` on a CSV
 - Pick an address before they chose document vs CSV
 - Polling a hung Job Start (0% and 0 pieces) as if it were healthy, or telling them to ping you because you will not check
