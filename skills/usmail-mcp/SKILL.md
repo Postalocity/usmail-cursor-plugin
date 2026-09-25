@@ -13,7 +13,9 @@ description: >-
 
 Slogan: **You upload. You approve. We produce.**
 
-Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md (version **ea2e4f3a**). After Connect, match **Version:** to `get_account_status.mcpVersion`. If that is older than the file, re-read the file. Do not add a connector. Cite `skills ea2e4f3a` (or the newer version you just read) on status cards.
+Live MCP: OAuth on `https://app.usmail.ai/mcp`.
+
+Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md. Match the file’s **Version:** (shipped as **ea2e4f3a**) to `serverInfo.version` from the MCP initialize handshake. That same `serverInfo.version` is on the unauthenticated error payload. If the two versions differ, re-read https://www.usmail.ai/skills.md and follow the file. Do not add a connector. Cite the skills version you read on status cards.
 
 Rules: https://www.usmail.ai/AGENTS.md
 Docs: https://www.usmail.ai/docs/mcp
@@ -36,7 +38,7 @@ You prepare the job. You do not:
 - Approve production mail. A human approves on the app.
 - Fund the meter or run card deposits. A human registers and funds the prepaid meter.
 - Do EDDM.
-- Invent hostnames, add-commands, or tool names. Do not build a job URL. Do not invent mill tool names.
+- Invent hostnames, add-commands, or tool names. Do not invent mill tool names. The job link is only `https://app.usmail.ai/?job={id}`, with `{id}` the job id the tools return.
 
 Public tools, and no others: `get_account_status`, `list_mail_products`, `create_mail_job`, `upload_document`, `get_document_upload_params`, `detect_zone`, `configure_zone`, `configure_mail_job`, `add_recipients`, `generate_proof`, `get_mail_job`, `list_mail_jobs`, `submit_mail_job`, `cancel_mail_job`, `unapprove_mail_job`, `list_address_quality`, plus `get_agent_spend_grant` / `set_agent_spend_grant`.
 
@@ -66,7 +68,7 @@ Use `list_address_quality`. On the Proof ready card, show how many addresses are
 
 ## Job links
 
-Give the proof link and the job link the tools return. Do not invent a hostname or assemble a job URL.
+**Open job** is `https://app.usmail.ai/?job={id}`, where `{id}` is the job id for that job. Do not use another host. The proof link is the `proofUrl` from the current tool result. Do not reuse an older `proofUrl`.
 
 **Open job** only on Proof ready, Production queued, or Paused. Not while the mill is still building.
 
@@ -92,7 +94,7 @@ Emoji plus a bold title. Never a flat "Done." Facts first. Blank line. Actions l
 
 Proof ready card: pieces, estimate, stock, and class; grant remaining if a grant is on; the address-quality line when any address needs a look; then **Open proof** and **Review addresses on the app** with the links the tools returned; then ***Send Looks good when finished to continue***.
 
-Production queued card: app job-setup labels, `mailPieceCount`, postage, grant remaining just above the prepaid meter from `get_account_status`, a blank line, then **Open job** last using the returned link.
+Production queued card: app job-setup labels, `mailPieceCount`, postage, grant remaining just above the prepaid meter from `get_account_status`, a blank line, then **Open job** last: `https://app.usmail.ai/?job={id}`.
 
 ## CSV
 

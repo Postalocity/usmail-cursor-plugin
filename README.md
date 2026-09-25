@@ -60,7 +60,7 @@ This repository is one plugin. It does not ship a multi-plugin `marketplace.json
 - Generate a proof before any production handoff. `generate_proof` is not approval.
 - Show address-quality results to the human. They fix, ignore, or still-mail on the app. The agent does not auto-fix addresses.
 - If the mill returns `mill_error`, show that text as-is.
-- Give the job and proof links the tools return. Do not invent a hostname.
+- Open job is `https://app.usmail.ai/?job={id}` with the job id the tools return. The proof link is that turn’s `proofUrl`.
 
 ## Human approval
 
