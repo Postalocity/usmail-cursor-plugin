@@ -15,7 +15,7 @@ Slogan: **You upload. You approve. We produce.**
 
 Live MCP: OAuth on `https://app.usmail.ai/mcp`.
 
-Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md. Match the file’s **Version:** (shipped as **ea2e4f3a**) to `serverInfo.version` from the MCP initialize handshake. That same `serverInfo.version` is on the unauthenticated error payload. If the two versions differ, re-read https://www.usmail.ai/skills.md and follow the file. Do not add a connector. Cite the skills version you read on status cards.
+Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md. Match the file’s **Version:** (shipped as **ea2e4f3a**) to `serverInfo.version` from the MCP initialize handshake. That same `serverInfo.version` is on the unauthenticated error payload. If the two versions differ, re-read https://www.usmail.ai/skills.md and follow the file. Do not add a connector. Cite the skills version you read on status cards. `get_account_status` returns only `success`, `account`, `org`, `meter`, and `message`. It is not the skills version.
 
 Rules: https://www.usmail.ai/AGENTS.md
 Docs: https://www.usmail.ai/docs/mcp
