@@ -1,11 +1,128 @@
 ---
 name: usmail-mcp
 description: >-
-  Use when connecting or using USMail.ai MCP (lab or prod) for print-to-mail —
-  OAuth, proof, human Pay & Approve, grant off happy path.
+  Prepare USMail.ai print-to-mail on https://app.usmail.ai/mcp. Use when the
+  user wants letters or postcards printed and mailed: upload a PDF, set
+  recipients, choose print options, generate a proof, and share the job link.
+  The agent prepares only. A human registers, funds the meter, and approves
+  production on the app. Do not use for EDDM, card deposits, or invented
+  tools or hostnames.
 ---
+
 # USMail.ai MCP
 
-Read live https://dev.usmail.ai/skills.md (lab) or https://www.usmail.ai/skills.md (prod) before prepare/send.
+Slogan: **You upload. You approve. We produce.**
 
-Grant default **off**. Chips one field at a time. `generate_proof` ≠ Approve. Human Pay & Approve on the app.
+Before you prepare or hand off a job, re-read https://www.usmail.ai/skills.md (version **ea2e4f3a**). After Connect, match **Version:** to `get_account_status.mcpVersion`. If that is older than the file, re-read the file. Do not add a connector. Cite `skills ea2e4f3a` (or the newer version you just read) on status cards.
+
+Rules: https://www.usmail.ai/AGENTS.md
+Docs: https://www.usmail.ai/docs/mcp
+Cite: https://www.usmail.ai/llms.txt
+
+## Connection
+
+This plugin has one server, `usmail`, at `https://app.usmail.ai/mcp`. Auth is OAuth. The plugin has no API key.
+
+If the server needs auth, the first beat of the turn is a normal tool call (`get_account_status`) so the host raises **Connect / Authorize** on the existing `usmail` server. Do not wait for the human to ask. Do not skip the card.
+
+**Never `AuthenticateMcpServer`.** That surfaces **Added**, not Authorize. **Added is not Authorize.** Tell them to Connect on the existing server. Do not add a second server. Do not sign out. A skills bump means re-read https://www.usmail.ai/skills.md.
+
+Host **Auto-review** means the host allowed a tool. It is not mill approval. It is not the postage grant.
+
+## Prepare. These are not skills
+
+You prepare the job. You do not:
+
+- Approve production mail. A human approves on the app.
+- Fund the meter or run card deposits. A human registers and funds the prepaid meter.
+- Do EDDM.
+- Invent hostnames, add-commands, or tool names. Do not build a job URL. Do not invent mill tool names.
+
+Public tools, and no others: `get_account_status`, `list_mail_products`, `create_mail_job`, `upload_document`, `get_document_upload_params`, `detect_zone`, `configure_zone`, `configure_mail_job`, `add_recipients`, `generate_proof`, `get_mail_job`, `list_mail_jobs`, `submit_mail_job`, `cancel_mail_job`, `unapprove_mail_job`, `list_address_quality`, plus `get_agent_spend_grant` / `set_agent_spend_grant`.
+
+## Sequence
+
+1. **Attach the PDF.** Small files: `fileBase64` is the PDF bytes from the chat attachment (never `@/path`). Large files: `get_document_upload_params` `{ jobId, fileName }`, POST the chat-attachment binary to S3 (`file=@<that.pdf>`), then `upload_document` `{ jobId, uploadedFileName }` with no `fileBase64`. Do not copy the file aside. Do not invent a base64 helper. If you cannot POST to S3, the human drops the PDF on **Open job**. Do not `generate_proof` on a stub.
+2. **`detect_zone` `{ pdfBase64 }`.** It returns `mailingType` and `paperSize`. Do not title this Pick an address.
+3. **Recipients, every product.** Ask whether to find the address on the document or upload a CSV. Wait. Document: use live `sampleText`, then **Pick an address**, and hold the zone. CSV or typed rows: `add_recipients`, not `upload_document`. Finding candidates is not choosing the path.
+4. **`create_mail_job` `{ mailingType, paperSize }`.** Document path: `upload_document`, then the zone. CSV path: `add_recipients` first, then `upload_document` for the artwork. Do not upload the PDF before the recipient digest on a list job.
+5. **Spend grant, asked early, default off.** Before chips, if the grant is off, ask **Postage grant?** Capped dollars, uncapped, or Pay & Approve on the app. Wait. Do not turn a grant on unless they choose it. Read it with `get_agent_spend_grant`. Set it with `set_agent_spend_grant` only after they say so.
+6. **Chips, one field at a time.** Ask `setup.next.prompt`. Wait. `configure_mail_job` for that field only. Letters: class, then color, then quality, then duplex, then inserts. Postcards: paper stock, then First-Class or Priority. Mill defaults are not consent.
+7. Apply recipients from step 3 with `configure_zone` `{ jobId, filename: uploadedFiles[0], zone }` or `add_recipients`. Then `generate_proof`. That is not Approve.
+8. **Building.** After `generate_proof`, the human card is only **Building your proof** (you will send the proof when it is ready). No **Open job** while it is building. You coarse-poll `get_mail_job`. Stay silent until the proof is ready or the job is hung. When it is ready, send the Proof ready card. Never reuse a stored `proofUrl`. Job Start at 0% and 0 pieces after two polls means hung; an **Open job** link is OK then.
+9. **Proof, then address quality.** Paste the Proof ready card, including address-quality counts. They can Still mail, Ignore, or Fix on the app. Do not auto-fix addresses. After they send **Looks good**, continue as below.
+
+## Proof gate
+
+Do not send a job to production before a proof is ready and the human has reviewed it. `generate_proof` is not approval.
+
+- Grant off (the default), or they declined a grant: do not approve. Hand them **Pay & Approve on the app** plus `approvalMarkdown` (or `approval_url`). The human approves on the app.
+- They set a spend grant, and after the proof they send **Looks good**: `submit_mail_job` is the handoff. The mill is the lock, not you. If the mill refuses, paste `mill_error` verbatim, and the mill `message` if it is present. Do not invent a second gate. Do not hide those words.
+- They said submit and you never asked about the grant: ask first. Never silent postage.
+
+## Address quality
+
+Use `list_address_quality`. On the Proof ready card, show how many addresses are good and how many need a look. If all are clean, omit that line. Fix, Still mail, and Ignore stay on the app. You do not rewrite addresses.
+
+## Job links
+
+Give the proof link and the job link the tools return. Do not invent a hostname or assemble a job URL.
+
+**Open job** only on Proof ready, Production queued, or Paused. Not while the mill is still building.
+
+## Cards
+
+Emoji plus a bold title. Never a flat "Done." Facts first. Blank line. Actions last. Only the title and the actions are emphasized. Setup, pieces, grant, meter, and address-quality counts stay plain text.
+
+| Beat | Title |
+|---|---|
+| PDF on the job | 📎 **PDF attached** |
+| Recipients | 📬 **Recipients?** Find address on the document, or upload a CSV? |
+| Document chosen and live `sampleText` is back | 📍 **Pick an address** |
+| Zone set | ✅ **Address locked** |
+| Grant | 💳 **Postage grant?** / **Grant on** / **No grant** |
+| Last chip | 🖨️ **Print options set** |
+| Building | ⚙️ **Building your proof** — I’ll send the proof when it’s ready. No Open job. |
+| Proof ready | 📄 **Proof ready — please review** |
+| Mill accepted the granted job | 🎉 **Production queued** |
+| Grant off | 🔗 **Pay & Approve on the app** plus `approvalMarkdown` |
+| Next chip | ✏️ **Next:** `{setup.next.prompt}` |
+| Approved, and they want a change | 🔓 **Unapprove to edit** — wait for yes, then `unapprove_mail_job` |
+| Stall | ⚠️ **Paused** — one next step |
+
+Proof ready card: pieces, estimate, stock, and class; grant remaining if a grant is on; the address-quality line when any address needs a look; then **Open proof** and **Review addresses on the app** with the links the tools returned; then ***Send Looks good when finished to continue***.
+
+Production queued card: app job-setup labels, `mailPieceCount`, postage, grant remaining just above the prepaid meter from `get_account_status`, a blank line, then **Open job** last using the returned link.
+
+## CSV
+
+"Upload a CSV" means `add_recipients`. Rows: `name, company1, address1, address2, city, state, zip`. Empty `company1` is valid. Max 100 per call. No spreadsheet through `upload_document`. No `configure_zone` on a CSV job.
+
+Order: `create_mail_job`, then `add_recipients`, then `upload_document` for artwork, then chips, then `generate_proof`.
+
+## Edit after approval
+
+Approved or queued: do not change chips, the zone, or the PDF. Tell them they must unapprove. Wait. Then `unapprove_mail_job`. Not `cancel_mail_job`. Then `get_agent_spend_grant` and cite the new remaining on the next Proof ready card. Do not reuse the old remaining. Then one change and `generate_proof`.
+
+## What they say
+
+| They say | You do |
+|---|---|
+| ok / looks good / approved, after the proof | Proof viewed. Show address quality. Reconfirm the grant. |
+| submit | Grant on: `submit_mail_job`. Grant declined: `approval_url`. Grant never asked: ask. |
+| approve grant | `set_agent_spend_grant`. Later, after proof review, `submit_mail_job` is the mill handoff. |
+| no grant | Grant stays off. After the proof, Pay & Approve on the app. |
+
+## Failures to avoid
+
+- Silent postage, or mill approval with no grant
+- Hiding `mill_error` or the mill `message`
+- A grant they did not ask for; mill defaults treated as chip answers; chips batched
+- A stub proof, or a queued card that only shows postage
+- `AuthenticateMcpServer`, a forced re-auth, or a new server for needsAuth or a skills bump
+- Recipients before the PDF on the document path; artwork before `add_recipients` on the CSV path; a substitute PDF; `@/path` as `fileBase64`; a CSV via `upload_document`; `configure_zone` on a CSV
+- Pick an address before they chose document vs CSV
+- Polling a hung Job Start (0% and 0 pieces) as if it were healthy, or telling them to ping you because you will not check
+- Dumping mill percent on every poll
+- Pasting a `proofUrl` from an earlier turn
+- Invented hostnames, add-commands, or tool names
