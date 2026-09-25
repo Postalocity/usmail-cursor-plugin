@@ -4,10 +4,6 @@
     "usmail": {
       "type": "http",
       "url": "https://app.usmail.ai/mcp"
-    },
-    "usmail-lab": {
-      "type": "http",
-      "url": "https://dev.usmail.ai/mcp"
     }
   }
 }
